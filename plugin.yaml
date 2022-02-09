@@ -1,0 +1,21 @@
+name: spring-app-kt-template
+description: Spring + Kotlin
+types:
+  - app-template
+inputs:
+  - label: Project name
+    type: text
+    name: project_name
+    global: true
+    default: project-name
+  
+  - label: Group id
+    type: text
+    name: project_group_id
+    global: true
+    default: com.stackspot.demo
+  
+  - label: "Do you want to expose rest api: "
+    type: bool
+    name: "starter_web"
+    default: true
