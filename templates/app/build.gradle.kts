@@ -22,8 +22,14 @@ dependencies {
     {% else %}
     implementation("org.springframework.boot:spring-boot-starter")
     {% endif %}
+    implementation("com.stackspot:logging:0.0.1")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(kotlin("test"))
+}
+
+configurations.implementation {
+    exclude(group = "ch.qos.logback", module = "logback-classic")
+    exclude(group = "org.apache.logging.log4j", module = "log4j-to-slf4j")
 }
 
 tasks.withType<Test> {
