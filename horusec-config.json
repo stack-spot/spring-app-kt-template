@@ -1,5 +1,7 @@
 {
   "horusecCliFilesOrPathsToIgnore": [
-    "**/gradlew.bat"
+    "**/gradlew.bat",
+    "**/deploy.sh",
+    "**/deploy.bat"
   ]
 }

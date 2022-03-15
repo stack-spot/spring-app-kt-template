@@ -19,3 +19,35 @@ inputs:
     type: bool
     name: "starter_web"
     default: true
+
+  - label: Cluster namespace
+    type: text
+    name: project_cluster_namespace
+    global: true
+    default: default
+
+  - label: Image name
+    type: text
+    name: project_image_name
+    global: true
+
+computedInputs: 
+  camel_project_name: "{{project_name|to_camel}}"
+
+lifecycle:
+  deploy:
+    supported-os:
+      - windows
+      - linux
+      - mac
+    requirements-check:
+      npm:
+        check-command: npm --version
+        info: npm is not installed
+      gradle:
+        check-command: ./infra/gradlew -v
+        info: gradle is not configured
+    deploy-command:
+      windows: cmd /c infra\deploy.bat ${stage}
+      linux: sh ./infra/deploy.sh ${stage}
+      mac: sh ./infra/deploy.sh ${stage}
