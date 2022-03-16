@@ -11,20 +11,19 @@ const val APP_PORT = 8080
 
 fun main() {
     val app = App()
-
-    val stage = app.node.tryGetContext("stage")
-
+    lateinit var stage: Any
+    try {
+        stage = app.node.tryGetContext("stage")
+    } catch (ex: Exception) {
+        throw Error("Stage parameter is required")
+    }
     val stageObject =
         jacksonObjectMapper().readValue(Paths.get("..", "stages", "$stage.json").toFile(), Stage::class.java)
-
     val environment = Environment.builder()
-        .account(System.getenv(stageObject.cloud.account.id))
-        .region(System.getenv(stageObject.cloud.account.region))
+        .account(stageObject.cloud.account.id)
+        .region(stageObject.cloud.account.region)
         .build()
-
     val stackProps = StackProps.builder().env(environment).build()
-
     {{computed_inputs.camel_project_name}}CdkStack(app, "$APP_NAME-stack", stackProps, stageObject)
-
     app.synth()
 }
