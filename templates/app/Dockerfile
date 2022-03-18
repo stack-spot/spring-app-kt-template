@@ -1,10 +1,12 @@
 FROM amazoncorretto:11 as builder
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
-COPY *.kts ./
-COPY gradle.properties .
 COPY gradle gradle/
 COPY gradlew .
+RUN ./gradlew > /dev/null
+COPY *.kts ./
+COPY gradle.properties .
+RUN ./gradlew dependencies > /dev/null
 COPY src src/
 RUN ./gradlew bootJar
 
