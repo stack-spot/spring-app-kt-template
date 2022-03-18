@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
 
-  {{project_name}}:
+  {{project_name|lower}}:
     build: .
     ports:
       - 8080:8080
