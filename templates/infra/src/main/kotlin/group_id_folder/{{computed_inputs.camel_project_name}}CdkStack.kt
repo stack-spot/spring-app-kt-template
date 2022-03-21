@@ -21,11 +21,15 @@ class {{computed_inputs.camel_project_name}}CdkStack(scope: Construct?, id: Stri
             ?: throw IllegalStateException("The attribute outputs.clusterName is not present in the stage")
 
         val kubectlRoleOutput = stageObject.outputs["kubectlRole"]
-            ?: throw IllegalStateException("The attribute outputs.kubectlRole is not present in the stage")    
+            ?: throw IllegalStateException("The attribute outputs.kubectlRole is not present in the stage")
+
+        val namespaceOutput = stageObject.outputs["namespace"]
+            ?: throw IllegalStateException("The attribute outputs.namespace is not present in the stage")    
 
         val openId = Fn.importValue(openIdOutput)
         val clusterName = Fn.importValue(clusterNameOutput)
         val kubectlRole = Fn.importValue(kubectlRoleOutput)
+        val namespace = Fn.importValue(namespaceOutput)
         val provider = OpenIdConnectProvider.fromOpenIdConnectProviderArn(this, "open-id", openId)
 
         val attributes = ClusterAttributes.builder()
@@ -35,13 +39,13 @@ class {{computed_inputs.camel_project_name}}CdkStack(scope: Construct?, id: Stri
             .build()
 
         val chartProps = ChartProps.builder()
-            .namespace("{{project_cluster_namespace}}")
+            .namespace(namespace)
             .build()
 
         val cluster = Cluster.fromClusterAttributes(this, "cluster", attributes)
         cluster.addCdk8sChart("chart", Manifests(App(), APP_NAME, chartProps))
 
-        val accountOptions = ServiceAccountOptions.builder().name(APP_NAME).namespace("{{project_cluster_namespace}}").build()
+        val accountOptions = ServiceAccountOptions.builder().name(APP_NAME.lowercase()).namespace(namespace).build()
         val accountRole = cluster.addServiceAccount("account", accountOptions).role
     }
 }

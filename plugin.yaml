@@ -20,12 +20,6 @@ inputs:
     name: "starter_web"
     default: true
 
-  - label: Cluster namespace
-    type: text
-    name: project_cluster_namespace
-    global: true
-    default: default
-
   - label: Image name
     type: text
     name: project_image_name
@@ -51,3 +45,8 @@ lifecycle:
       windows: cmd /c infra\deploy.bat ${stage}
       linux: sh ./infra/deploy.sh ${stage}
       mac: sh ./infra/deploy.sh ${stage}
+hooks:
+  - type: run
+    trigger: after-render
+    commands:
+    - echo This project deploy command needs a stage parameter(created by your env project), to get some configurations, like namespace, vpc, cluster name.
