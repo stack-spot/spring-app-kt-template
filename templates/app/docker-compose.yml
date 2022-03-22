@@ -3,6 +3,9 @@ version: '3.8'
 services:
 
   {{project_name|lower}}:
-    build: .
+    build:
+      context: .
+      args:
+        USER: root
     ports:
       - 8080:8080
