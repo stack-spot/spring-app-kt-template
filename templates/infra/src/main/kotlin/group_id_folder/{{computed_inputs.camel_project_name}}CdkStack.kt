@@ -23,13 +23,10 @@ class {{computed_inputs.camel_project_name}}CdkStack(scope: Construct?, id: Stri
         val kubectlRoleOutput = stageObject.outputs["kubectlRole"]
             ?: throw IllegalStateException("The attribute outputs.kubectlRole is not present in the stage")
 
-        val namespaceOutput = stageObject.outputs["namespace"]
-            ?: throw IllegalStateException("The attribute outputs.namespace is not present in the stage")    
-
         val openId = Fn.importValue(openIdOutput)
         val clusterName = Fn.importValue(clusterNameOutput)
         val kubectlRole = Fn.importValue(kubectlRoleOutput)
-        val namespace = Fn.importValue(namespaceOutput)
+        val namespace = stageObject.cloud.namespace ?: throw IllegalStateException("The attribute cloud.namespace is not present in the stage")
         val provider = OpenIdConnectProvider.fromOpenIdConnectProviderArn(this, "open-id", openId)
 
         val attributes = ClusterAttributes.builder()
