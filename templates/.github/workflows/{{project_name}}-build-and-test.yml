@@ -1,0 +1,62 @@
+name: '{{project_name}}-build-and-test'
+on:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './app'
+    container:
+      image: gradle:7.2.0-jdk11
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ '{{' }} runner.os }}-gradle-${{ '{{' }} hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ '{{' }} runner.os }}-gradle-
+      - name: Test
+        run: gradle test
+      - name: Lint
+        run: gradle ktlintCheck --stacktrace
+      - name: Cleanup Gradle Cache
+        run: |
+          rm -f ~/.gradle/caches/modules-2/modules-2.lock
+          rm -f ~/.gradle/caches/modules-2/gc.properties
+
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './app'
+    container:
+      image: gradle:7.2.0-jdk11
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ '{{' }} runner.os }}-gradle-${{ '{{' }} hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ '{{' }} runner.os }}-gradle-
+      - name: Build
+        run: gradle assemble
+
+  security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './app'
+    container:
+      image:  horuszup/horusec-cli:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Horusec Security
+        run: horusec start -e -p .

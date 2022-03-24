@@ -1,5 +1,6 @@
 package {{project_group_id}}
 
+import org.cdk8s.ApiObjectMetadata
 import org.cdk8s.Chart
 import org.cdk8s.ChartProps
 import org.cdk8s.Duration
@@ -9,6 +10,7 @@ import org.cdk8s.plus22.Cpu
 import org.cdk8s.plus22.CpuResources
 import org.cdk8s.plus22.Deployment
 import org.cdk8s.plus22.EnvValue
+import org.cdk8s.plus22.ExposeDeploymentViaServiceOptions
 import org.cdk8s.plus22.HttpGetProbeOptions
 import org.cdk8s.plus22.MemoryResources
 import org.cdk8s.plus22.Probe
@@ -36,9 +38,12 @@ class Manifests(scope: Construct, id: String, chartProps: ChartProps) : Chart(sc
             .memory(MemoryResources.builder().request(Size.gibibytes(2)).limit(Size.gibibytes(4)).build())
             .build()
 
+        if (System.getenv("RELEASE_APPLICATION_IMAGE_URI").isNullOrBlank())
+            throw Error("AWS ECR application image URI is not configurated, verify pipeline configurations") 
+
         val containerProps = ContainerProps.builder()
             .name(APP_NAME)
-            .image("{{project_image_name}}")
+            .image(System.getenv("RELEASE_APPLICATION_IMAGE_URI"))
             .port(APP_PORT)
             .liveness(probe)
             .readiness(probe)
@@ -49,8 +54,17 @@ class Manifests(scope: Construct, id: String, chartProps: ChartProps) : Chart(sc
         val deployment = Deployment.Builder.create(this, "deployment")
             .containers(listOf(containerProps))
             .serviceAccount(ServiceAccount.fromServiceAccountName(APP_NAME))
+            .metadata(object : ApiObjectMetadata {
+                override fun getName(): String {
+                    return APP_NAME
+                }
+            })
             .build()
 
-        deployment.exposeViaService().exposeViaIngress("/")
+        deployment.exposeViaService(
+            ExposeDeploymentViaServiceOptions.Builder()
+                .name(APP_NAME)
+                .build()
+        )
     }
 }

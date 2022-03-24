@@ -1,0 +1,97 @@
+name: '{{project_name}}-release'
+on:
+  push:
+    tags: '*-v*'
+
+jobs:
+ 
+  get-release-infos:
+    runs-on: ubuntu-latest
+    outputs:
+      stage: ${{ '{{' }} steps.release-infos.outputs.stage }}
+      image_tag: ${{ '{{' }} steps.release-infos.outputs.image_tag }}
+    steps:       
+      - name: Get release infos from release tag
+        id: release-infos
+        run: |
+          STAGE="$(echo '${{ '{{' }} github.ref }}' | sed 's/refs\/tags\///' | sed 's/-v.*//')"
+          IMAGE_TAG="$(echo '${{ '{{' }} github.ref }}' | sed 's/refs\/tags\///' | sed 's/.*-v//')"
+          echo "::set-output name=stage::$STAGE"
+          echo "::set-output name=image_tag::$IMAGE_TAG"
+
+  get-and-validate-stage-infos:
+    runs-on: ubuntu-latest
+    outputs:
+      stage_aws_region: ${{ '{{' }} steps.get-stage-infos.outputs.stage_aws_region }}
+    defaults:
+      run:
+        working-directory: './stages'
+    needs: [get-release-infos]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Validate stage from release info
+        id: validate-stage-infos
+        run: (test -f ${{ '{{' }} needs.get-release-infos.outputs.stage }}.json && echo ${{ '{{' }} needs.get-release-infos.outputs.stage }}.json exists) || (echo File ${{ '{{' }} needs.get-release-infos.outputs.stage }}.json does not exist, skipping step, and abort release && exit 1)
+      - name: Get Stage info
+        id: get-stage-infos
+        run: |
+          REGION="$(jq -r .cloud.account.region sandbox.json)"
+          echo "::set-output name=stage_aws_region::$REGION"
+
+  publish-app-image-aws-ecr:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: './app'
+    needs: [get-release-infos,get-and-validate-stage-infos]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ '{{' }} needs.get-and-validate-stage-infos.outputs.stage_aws_region }}
+          role-to-assume: ${{ '{{' }} secrets.PIPELINE_RELEASE_ROLE }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push image to Amazon ECR
+        id: publish-image
+        env:
+          ECR_REGISTRY: ${{ '{{' }} steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: {{project_name}}
+          IMAGE_TAG: ${{ '{{' }} needs.get-release-infos.outputs.image_tag }}
+        run: |
+          aws ecr describe-repositories --repository-names {{project_name}} || aws ecr create-repository --repository-name {{project_name}}
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG 
+
+  deploy-cdk:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: './infra'
+    needs: [get-release-infos, get-and-validate-stage-infos, publish-app-image-aws-ecr]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ '{{' }} needs.get-and-validate-stage-infos.outputs.stage_aws_region }}
+          role-to-assume: ${{ '{{' }} secrets.PIPELINE_RELEASE_ROLE }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Deploy Application
+        env:
+          AWS_DEFAULT_REGION: ${{ '{{' }} needs.get-and-validate-stage-infos.outputs.stage_aws_region }}
+          RELEASE_APPLICATION_IMAGE_URI: ${{ '{{' }} steps.login-ecr.outputs.registry }}/{{project_name}}:${{ '{{' }} needs.get-release-infos.outputs.image_tag }}
+        run: npx cdk deploy --require-approval never -c stage=${{ '{{' }} needs.get-release-infos.outputs.stage }}

@@ -20,11 +20,6 @@ inputs:
     name: "starter_web"
     default: true
 
-  - label: Image name
-    type: text
-    name: project_image_name
-    global: true
-
 computedInputs: 
   camel_project_name: "{{project_name|to_camel}}"
 
