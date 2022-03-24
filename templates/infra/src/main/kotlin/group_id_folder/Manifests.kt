@@ -51,7 +51,7 @@ class Manifests(scope: Construct, id: String, chartProps: ChartProps) : Chart(sc
             .resources(resources)
             .build()
 
-        val deployment = Deployment.Builder.create(this, "deployment")
+         val deployment = Deployment.Builder.create(this, "deployment")
             .containers(listOf(containerProps))
             .serviceAccount(ServiceAccount.fromServiceAccountName(APP_NAME))
             .metadata(object : ApiObjectMetadata {
@@ -59,12 +59,16 @@ class Manifests(scope: Construct, id: String, chartProps: ChartProps) : Chart(sc
                     return APP_NAME
                 }
             })
+            .defaultSelector(false)
             .build()
+        val selectorLabel = "app"
+        deployment.podMetadata.addLabel(selectorLabel, APP_NAME)
+        deployment.selectByLabel(selectorLabel, APP_NAME)
 
         deployment.exposeViaService(
             ExposeDeploymentViaServiceOptions.Builder()
                 .name(APP_NAME)
                 .build()
-        )
+        ).addSelector(selectorLabel, APP_NAME)
     }
 }
