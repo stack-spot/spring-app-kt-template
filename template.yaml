@@ -1,5 +1,5 @@
 name: spring-app-kt-template
-description: Spring + Kotlin
+description: A Spring Kotlin application's base template with minimum CDK configurations to provisioning an EKS cluster and deploy your application.
 types:
   - app-template
 inputs:
@@ -44,4 +44,23 @@ hooks:
   - type: run
     trigger: after-render
     commands:
-    - echo This project deploy command needs a stage parameter(created by your env project), to get some configurations, like namespace, vpc, cluster name.
+    - echo This project deploy command needs a stage parameter (created by your env project), to get some configurations, like namespace, vpc, cluster name.
+
+displayName: Kotlin/Spring/EKS
+
+category: backend
+
+compatibility:
+  - spring
+  - kotlin
+
+about: about.md
+
+usage: usage.md
+
+useCase: useCase.md
+
+implementation: implementation.md
+
+technologies: [ "Java", "SpringBoot", "aws", "EKS" ]
+
