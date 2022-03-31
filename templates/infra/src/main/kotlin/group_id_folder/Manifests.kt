@@ -64,11 +64,12 @@ class Manifests(scope: Construct, id: String, chartProps: ChartProps) : Chart(sc
         val selectorLabel = "app"
         deployment.podMetadata.addLabel(selectorLabel, APP_NAME)
         deployment.selectByLabel(selectorLabel, APP_NAME)
-
-        deployment.exposeViaService(
+        
+        val service = deployment.exposeViaService(
             ExposeDeploymentViaServiceOptions.Builder()
                 .name(APP_NAME)
                 .build()
-        ).addSelector(selectorLabel, APP_NAME)
+        )
+        service.addSelector(selectorLabel, APP_NAME)
     }
 }
